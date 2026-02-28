@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html class="borderbox">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1">
+    <meta name="renderer" content="webkit">
+    <meta name="description" content="<%= htmlWebpackPlugin.options.description %>">
+    <meta name="keywords" content="<%= htmlWebpackPlugin.options.keywords %>">
+    <title><%= htmlWebpackPlugin.options.title %></title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="text/javascript" src="/resources/js/configs<%=(htmlWebpackPlugin.options.configsEnv ? '.' + htmlWebpackPlugin.options.configsEnv : '')%>.js?v=<%= htmlWebpackPlugin.options.version %>"></script>
+
+  </body>
+</html>

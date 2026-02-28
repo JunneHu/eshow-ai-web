@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "baseUrl": ".",
+    "paths": {
+      "@components/*": ["src/components/*"],
+      "@utils/*": ["src/utils/*"],
+      "@sprite/*": ["src/sprite/*"],
+      "@Common/*": ["src/components/Common/*"],
+      "@models/*": ["src/models/*"],
+      "@widgets/*": ["src/widgets/*"],
+      "@services/*": ["src/services/*"],
+      "@hooks/*": ["src/hooks/*"],
+    }
+  }
+}

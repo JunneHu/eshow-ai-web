@@ -1,0 +1,237 @@
+.color-green {
+  color: green;
+}
+.color-green2 {
+  color: #2acf9c !important;
+}
+.color-primary {
+  color: #1890ff;
+}
+.color-tip1 {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+.color-tip2 {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+.color-tip3 {
+  color: rgba(255, 255, 255, 0.25) !important;
+}
+.color-invalid {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+.color-tip4 {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+.color-w {
+  color: #fff !important;
+}
+.color-w4 {
+  color: #e4e4e4;
+}
+
+.color-red {
+  color: #ff4d4f !important;
+}
+.color-red3 {
+  color: #be333f !important;
+}
+.color-red-light {
+  color: #ff8380 !important;
+}
+.color-g94 {
+  color: #949494 !important;
+} /*提示*/
+.color-gd7 {
+  color: #d7d7d7 !important;
+} /*边框色,阴影*/
+.color-warn {
+  color: #ff7976 !important;
+} /*执行中*/
+.color-blue {
+  color: #09bfd9 !important;
+} /*平凡蓝*/
+.color-blue2 {
+  color: #00c0d9 !important;
+} /*平凡蓝*/
+.color-green-w {
+  color: #009688 !important;
+} /*和白色搭配的绿*/
+.color-orange-w {
+  color: #ff6600 !important;
+} /*和白色搭配的橘色*/
+.color-b4 {
+  color: rgba(0, 0, 0, 0.45) !important;
+}
+.color-b6 {
+  color: rgba(0, 0, 0, 0.65) !important;
+}
+.color-b8 {
+  color: rgba(0, 0, 0, 0.85) !important;
+}
+
+.bg-0 {
+  background: transparent !important;
+}
+.bg-b {
+  background: #000 !important;
+}
+.bg-bg {
+  background: rgba(244, 246, 248, 1) !important;
+} /*背景:淡灰色*/
+.bg-w {
+  background: #fff !important;
+}
+.bg-warn {
+  background: #ff6600 !important;
+}
+.bg-blue {
+  background: #09bfd9 !important;
+} /*按钮蓝*/
+.bg-ge {
+  background: #e4e4e4 !important;
+} /*unable*/
+.bg-wxg {
+  background: #06bf05 !important;
+} /*微信绿*/
+.bg-ag {
+  background: #a4c639 !important;
+} /*安卓绿*/
+.bg-gd7 {
+  background: #d7d7d7 !important;
+} /*边框色*/
+.bg-mask {
+  background: rgba(0, 0, 0, 0.3) !important;
+} /*遮罩*/
+.bg-mask-light {
+  background: rgba(228, 221, 221, 0.3) !important;
+} /*item背景*/
+.bg-blue-light {
+  background: rgba(130, 219, 230, 0.3) !important;
+} /*item背景*/
+.bg-mask2 {
+  background: rgba(0, 0, 0, 0.2) !important;
+} /*遮罩*/
+
+.bg-b1 {
+  background: #09bfd9 !important;
+}
+.bg-green {
+  background: green;
+}
+.bg-green2 {
+  background: #2acf9c;
+}
+.bg-b3 {
+  background: #3883d0;
+}
+.bg-b1f {
+  background: #1fadff;
+}
+.bg-orange {
+  background: orange;
+}
+.bg-orange2 {
+  background: #ff6600;
+}
+.bg-hide {
+  background: transparent !important;
+}
+.bg-w6 {
+  background: #f6f6f6 !important;
+}
+.bg-g9 {
+  background: #c9c9c9 !important;
+}
+.bg-red3 {
+  background: #be333f !important;
+}
+.bg-red {
+  background: #f5222d !important;
+}
+.bg-sel {
+  background: #f3f5fb !important;
+}
+.bg-selected {
+  background: #118ce2 !important;
+}
+.bg-invalid {
+  background: rgba(0, 0, 0, 0.35) !important;
+}
+.bg-sub {
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+.status-green {
+  background: #16cd86;
+}
+.status-blue {
+  background: rgba(24, 144, 255, 1);
+}
+.status-skyblue {
+  background: rgba(55, 215, 239, 1);
+}
+.status-red {
+  background: rgba(255, 102, 110, 1) !important;
+}
+.status-orange {
+  background: rgba(245, 96, 35, 1);
+}
+.status-yellow {
+  background: rgba(255, 152, 0, 1);
+}
+
+.text-muted {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.text-error {
+  color: #f7534f !important;
+}
+
+.text-success {
+  color: #16cd86;
+}
+
+.sd-tag-red {
+  color: #f5222d !important;
+  border-color: #ffa39e !important;
+  background-color: #fff1f0 !important;
+}
+.sd-tag-blue {
+  color: #096dd9;
+  background: #e6f7ff;
+  border: solid 1px #91d5ff;
+}
+.sd-tag-green{
+  color: #389e0d;
+    background: #f6ffed;
+    border: solid 1px #b7eb8f;
+}
+.color000 {
+  color: #000;
+}
+
+.color666 {
+  color: #666;
+}
+
+.color333 {
+  color: #333;
+}
+
+.gradient-yellow {
+  background: #fdb765;
+  background: linear-gradient(45deg, #fdb765 0%, #ffe485 100%);
+}
+.gradient-blue {
+  background: #59bcff;
+  background: linear-gradient(45deg, #59bcff 21%, #59d7ff 100%);
+}
+
+.gradient-green {
+  background: #4ad994;
+  background: linear-gradient(45deg, #4ad994 0%, #57f998 100%);
+}
+.gradient-red {
+  background: #ff6d59;
+  background: linear-gradient(45deg, #ff6d59 0%, #ffd584 100%);
+}

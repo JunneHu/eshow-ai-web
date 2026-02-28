@@ -1,0 +1,30 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "chrome": 52,
+          "browsers": ["last 2 versions", "safari 7"]
+        },
+        "useBuiltIns": "usage",
+        "corejs": 3
+      }
+    ],
+    "@babel/preset-react"
+  ],
+  "plugins": [
+    "@babel/plugin-transform-runtime",
+    ["@babel/plugin-proposal-decorators", { "legacy": true }],
+    "@babel/plugin-proposal-class-properties",
+    "@babel/plugin-syntax-dynamic-import",
+    [
+      "import",
+      {
+        "libraryName": "antd",
+        "libraryDirectory": "es",
+        "style": false
+      }
+    ]
+  ]
+}
