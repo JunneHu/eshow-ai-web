@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Carousel, Input, Spin, Tag, Typography, message } from 'antd';
+import { Button, Carousel, Spin, Tag, Typography } from 'antd';
 import { Link, useHistory, useParams } from 'react-router-dom';
 import { LinkOutlined } from '@ant-design/icons';
 import BasicLayout from '@/layouts/BasicLayout';
 import { createToolComment, getToolComments, getToolDetail, getCategoryDetail, getAdsByPosition } from '@/api/tools';
+import CommentSection from '@/components/CommentSection';
 import { useToolNavItems } from '@/hooks/useToolNavItems';
+import { track } from '@/utils/tracking';
+import DOMPurify from 'dompurify';
 import './index.less';
 
 const { Title, Paragraph, Text } = Typography;
-const { TextArea } = Input;
 
 type AnyObj = Record<string, any>;
 
@@ -57,14 +59,6 @@ function toZhTag(tag: string): string {
   return TAG_ZH[normalized] || tag;
 }
 
-function avatarText(nickname: any): string {
-  const s = nickname ? String(nickname).trim() : '';
-  if (!s) return '访客';
-  const first = s.slice(0, 1);
-  if (/^[a-zA-Z]$/.test(first)) return s.slice(0, 2).toUpperCase();
-  return first;
-}
-
 const ToolDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
@@ -75,15 +69,7 @@ const ToolDetail: React.FC = () => {
   const [recommend, setRecommend] = useState<any[]>([]);
   const [detailAds, setDetailAds] = useState<any[]>([]);
 
-  const [comments, setComments] = useState<any[]>([]);
-  const [commentsLoading, setCommentsLoading] = useState(false);
-  const [commentSubmitting, setCommentSubmitting] = useState(false);
-  const [commentContent, setCommentContent] = useState('');
-  const [commentNickname, setCommentNickname] = useState('');
-  const [commentEmail, setCommentEmail] = useState('');
-  const [commentWebsite, setCommentWebsite] = useState('');
-  const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [replyContent, setReplyContent] = useState('');
+  const [adExposedSet] = useState(() => new Set<string>());
 
   const detailAdsDisplayType = useMemo(() => {
     const first = detailAds && detailAds[0];
@@ -105,8 +91,17 @@ const ToolDetail: React.FC = () => {
     fetchData();
   }, [id]);
 
+  useEffect(() => {
+    if (!tool?.id) return;
+    track('tool_view', { toolId: tool.id });
+  }, [tool?.id]);
+
   const tags = useMemo(() => parseTags(tool?.tags), [tool?.tags]);
   const contentHtml = useMemo(() => (tool?.content ? String(tool.content) : ''), [tool?.content]);
+  const sanitizedContentHtml = useMemo(
+    () => DOMPurify.sanitize(contentHtml || ''),
+    [contentHtml],
+  );
 
   const websiteUrl = useMemo(() => {
     const direct = tool?.websiteUrl ? String(tool.websiteUrl) : '';
@@ -145,133 +140,37 @@ const ToolDetail: React.FC = () => {
       });
   }, []);
 
-  const fetchComments = async (toolId: number) => {
-    setCommentsLoading(true);
-    try {
-      const res: any = await getToolComments(toolId);
-      setComments(res.data || []);
-    } catch (e) {
-      setComments([]);
-    } finally {
-      setCommentsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (!tool?.id) return;
-    fetchComments(tool.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tool?.id]);
+    if (!detailAds || detailAds.length === 0) return;
+    if (typeof window === 'undefined') return;
+    if (!(window as any).IntersectionObserver) return;
 
-  const handleSubmitComment = async (parentId?: number | null) => {
-    if (!tool?.id) return;
-    const content = (parentId ? replyContent : commentContent).trim();
-    const nickname = commentNickname.trim();
-    const email = commentEmail.trim();
-    const website = commentWebsite.trim();
-
-    if (!content) {
-      message.warning('请输入评论内容');
-      return;
-    }
-    if (!nickname) {
-      message.warning('请输入昵称');
-      return;
-    }
-
-    setCommentSubmitting(true);
-    try {
-      await createToolComment({
-        toolId: tool.id,
-        parentId: parentId || null,
-        content,
-        nickname,
-        email,
-        website,
-      });
-      message.success('发表成功');
-      if (parentId) {
-        setReplyContent('');
-        setReplyingTo(null);
-      } else {
-        setCommentContent('');
-      }
-      fetchComments(tool.id);
-    } catch (e) {
-    } finally {
-      setCommentSubmitting(false);
-    }
-  };
-
-  const formatTime = (v: any) => {
-    if (!v) return '';
-    return String(v).replace('T', ' ').slice(0, 19);
-  };
-
-  const renderCommentItem = (item: any, level: number = 0) => {
-    const website = item.website ? String(item.website) : '';
-    return (
-      <div key={item.id} className="ai-comment-item" style={{ marginLeft: level ? 24 : 0 }}>
-        <div className="ai-comment-main">
-          <div className="ai-comment-avatar">{avatarText(item.nickname)}</div>
-          <div className="ai-comment-body">
-            <div className="ai-comment-meta">
-              <div className="ai-comment-author">
-                <span className="ai-comment-nickname">{String(item.nickname || '游客')}</span>
-                {website ? (
-                  <a className="ai-comment-website" href={website} target="_blank" rel="noreferrer">
-                    {website}
-                  </a>
-                ) : null}
-              </div>
-              <div className="ai-comment-time">{formatTime(item.createdAt)}</div>
-            </div>
-            <div className="ai-comment-content">{String(item.content || '')}</div>
-            <div className="ai-comment-actions">
-              <Button type="link" size="small" onClick={() => setReplyingTo(item.id)} style={{ padding: 0 }}>
-                回复
-              </Button>
-            </div>
-
-            {replyingTo === item.id ? (
-              <div className="ai-comment-reply">
-                <TextArea
-                  value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
-                  placeholder="输入评论内容..."
-                  rows={4}
-                />
-                <div className="ai-comment-form-row">
-                  <Input value={commentNickname} onChange={(e) => setCommentNickname(e.target.value)} placeholder="昵称" />
-                  <Input value={commentEmail} onChange={(e) => setCommentEmail(e.target.value)} placeholder="邮箱" />
-                  <Input value={commentWebsite} onChange={(e) => setCommentWebsite(e.target.value)} placeholder="网址" />
-                </div>
-                <div className="ai-comment-form-actions">
-                  <Button
-                    onClick={() => {
-                      setReplyingTo(null);
-                      setReplyContent('');
-                    }}
-                  >
-                    再想想
-                  </Button>
-                  <Button type="primary" loading={commentSubmitting} onClick={() => handleSubmitComment(item.id)}>
-                    发表评论
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        {Array.isArray(item.replies) && item.replies.length > 0 ? (
-          <div className="ai-comment-replies">
-            {item.replies.map((r: any) => renderCommentItem(r, level + 1))}
-          </div>
-        ) : null}
-      </div>
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          const el = e.target as HTMLElement;
+          const adId = el.getAttribute('data-ad-id');
+          const position = el.getAttribute('data-ad-position');
+          if (!adId) return;
+          const key = `${position || ''}:${adId}`;
+          if (adExposedSet.has(key)) return;
+          adExposedSet.add(key);
+          track('ad_view', {
+            adId: Number(adId),
+            position: position || 'tool_detail_bottom',
+          });
+        });
+      },
+      { threshold: 0.35 },
     );
-  };
+
+    const nodes = Array.from(document.querySelectorAll('.ai-ads-section .ai-ad-item[data-ad-id]'));
+    nodes.forEach((n) => io.observe(n));
+    return () => {
+      io.disconnect();
+    };
+  }, [detailAds.length]);
 
   const handleMenuClick = (key: string) => {
     history.push('/', { state: { scrollTo: key } });
@@ -316,82 +215,10 @@ const ToolDetail: React.FC = () => {
           AI工具集
         </Link>
       }
-      headerRight={
-        <Text type="secondary">
-          {tool.Categories?.[0]?.title ? `${tool.Categories?.[0]?.title} · ` : ''}
-          {tool.toolKey}
-        </Text>
-      }
+      headerRight={null}
     >
       <div className="ai-tools-page">
         <main className="ai-tools-content">
-          <section className="ai-tool-hero">
-            <div className="ai-tool-hero-card">
-              <div className="ai-tool-hero-left">
-                <div className="ai-tool-hero-mock">
-                  <div className="ai-tool-hero-mock-inner">
-                    <div className="ai-tool-hero-mock-avatar">
-                      {tool.name?.[0]?.toUpperCase?.() || 'A'}
-                    </div>
-                    <div className="ai-tool-hero-mock-title">{tool.name}</div>
-                    <div className="ai-tool-hero-mock-sub">AI工具卡片预览</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="ai-tool-hero-right">
-                <Title level={3} style={{ marginBottom: 8 }}>
-                  {tool.name}
-                </Title>
-                <Paragraph type="secondary" style={{ marginBottom: 12 }}>
-                  {tool.description || '暂无简介'}
-                </Paragraph>
-
-                <div className="ai-tool-hero-tags">
-                  {tags.slice(0, 6).map((t) => {
-                    const normalized = String(t).trim().toLowerCase();
-                    const label = toZhTag(String(t));
-                    return (
-                      <Tag
-                        key={`${normalized}-${label}`}
-                        color={normalized === 'hot' || label === '热门' ? 'magenta' : 'blue'}
-                      >
-                        {label}
-                      </Tag>
-                    );
-                  })}
-                </div>
-
-                <div className="ai-tool-hero-actions">
-                  {websiteUrl ? (
-                    <Button
-                      type="primary"
-                      // @ts-expect-error antd icons strict typing
-                      icon={<LinkOutlined />}
-                      href={websiteUrl}
-                      target="_blank"
-                    >
-                      访问官网
-                    </Button>
-                  ) : (
-                    <Button disabled>暂无官网</Button>
-                  )}
-                  {/* <Button onClick={() => history.push('/')}>返回首页</Button> */}
-                </div>
-
-                {/* {featureChips.length > 0 && (
-                  <div className="ai-tool-hero-chips">
-                    {featureChips.map((c) => (
-                      <span key={c} className="ai-tool-chip" title={c}>
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                )} */}
-              </div>
-            </div>
-          </section>
-
           <section className="ai-tools-section">
             <div className="ai-tools-section-header">
               <Title level={4} className="ai-tools-section-title">
@@ -400,8 +227,7 @@ const ToolDetail: React.FC = () => {
             </div>
             <div
               className="ai-tool-rich"
-              // 注意：富文本渲染存在 XSS 风险，需确保 content 来源可信或在后端做过净化
-              dangerouslySetInnerHTML={{ __html: contentHtml || '' }}
+              dangerouslySetInnerHTML={{ __html: sanitizedContentHtml }}
             />
           </section>
 
@@ -416,9 +242,18 @@ const ToolDetail: React.FC = () => {
                       <a
                         key={ad.id}
                         className="ai-ad-item"
+                        data-ad-id={String(ad.id)}
+                        data-ad-position="tool_detail_bottom"
                         href={href || undefined}
                         target={href ? "_blank" : undefined}
                         rel={href ? "noreferrer" : undefined}
+                        onClick={() => {
+                          track('ad_click', {
+                            adId: ad.id,
+                            position: 'tool_detail_bottom',
+                            linkUrl: href,
+                          });
+                        }}
                       >
                         {img ? <img className="ai-ad-image" src={img} alt={String(ad.name || '')} /> : null}
                       </a>
@@ -426,7 +261,11 @@ const ToolDetail: React.FC = () => {
                   })}
                 </Carousel>
               ) : (
-                <div className="ai-ads-grid">
+                <div
+                  className={`ai-ads-grid ${
+                    detailAds.length === 1 ? 'ai-ads-grid-1' : detailAds.length === 2 ? 'ai-ads-grid-2' : ''
+                  }`}
+                >
                   {detailAds.map((ad: any) => {
                     const href = ad.linkUrl ? String(ad.linkUrl) : '';
                     const img = ad.imageUrl ? String(ad.imageUrl) : '';
@@ -434,9 +273,18 @@ const ToolDetail: React.FC = () => {
                       <a
                         key={ad.id}
                         className="ai-ad-item"
+                        data-ad-id={String(ad.id)}
+                        data-ad-position="tool_detail_bottom"
                         href={href || undefined}
                         target={href ? "_blank" : undefined}
                         rel={href ? "noreferrer" : undefined}
+                        onClick={() => {
+                          track('ad_click', {
+                            adId: ad.id,
+                            position: 'tool_detail_bottom',
+                            linkUrl: href,
+                          });
+                        }}
                       >
                         {img ? <img className="ai-ad-image" src={img} alt={String(ad.name || '')} /> : null}
                       </a>
@@ -490,42 +338,25 @@ const ToolDetail: React.FC = () => {
           </section>
 
           <section className="ai-tools-section ai-comments-section">
-            <div className="ai-tools-section-header">
-              <Title level={4} className="ai-tools-section-title">
-                评论
-              </Title>
-            </div>
-
-            <div className="ai-comment-form">
-              <TextArea
-                value={commentContent}
-                onChange={(e) => setCommentContent(e.target.value)}
-                placeholder="输入评论内容..."
-                rows={4}
-              />
-              <div className="ai-comment-form-row">
-                <Input value={commentNickname} onChange={(e) => setCommentNickname(e.target.value)} placeholder="昵称" />
-                <Input value={commentEmail} onChange={(e) => setCommentEmail(e.target.value)} placeholder="邮箱" />
-                <Input value={commentWebsite} onChange={(e) => setCommentWebsite(e.target.value)} placeholder="网址" />
-              </div>
-              <div className="ai-comment-form-actions">
-                <Button type="primary" loading={commentSubmitting} onClick={() => handleSubmitComment(null)}>
-                  发表评论
-                </Button>
-              </div>
-            </div>
-
-            <div className="ai-comment-list">
-              {commentsLoading ? (
-                <div className="ai-tools-loading" style={{ height: 120 }}>
-                  <Spin />
-                </div>
-              ) : comments.length === 0 ? (
-                <Text type="secondary">暂无评论，快来抢沙发吧。</Text>
-              ) : (
-                comments.map((c: any) => renderCommentItem(c, 0))
-              )}
-            </div>
+            <CommentSection
+              title="评论"
+              bizId={tool.id}
+              storageKey="tool_comment_user"
+              getComments={({ page, pageSize }) => getToolComments({ toolId: tool.id, page, pageSize })}
+              createComment={({ parentId, content, nickname, email, website }) =>
+                createToolComment({
+                  toolId: tool.id,
+                  parentId,
+                  content,
+                  nickname,
+                  email,
+                  website,
+                })
+              }
+              trackSubmit={({ isReply }) => {
+                track('comment_submit', { toolId: tool.id, isReply });
+              }}
+            />
           </section>
         </main>
       </div>

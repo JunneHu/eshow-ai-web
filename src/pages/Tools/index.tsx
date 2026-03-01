@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Typography, Spin, Carousel } from 'antd';
+import { Typography, Spin, Carousel, Input } from 'antd';
 import {
   FireOutlined,
   ClockCircleOutlined,
@@ -23,6 +23,7 @@ import {
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import BasicLayout from '@/layouts/BasicLayout';
 import { getAdsByPosition, getCategories, getCategoryDetail } from '@/api/tools';
+import { track } from '@/utils/tracking';
 import './index.less';
 
 const { Title, Paragraph, Text } = Typography;
@@ -74,6 +75,10 @@ const ToolsPage: React.FC = () => {
   const [activeKey, setActiveKey] = useState<string>();
   const [loading, setLoading] = useState<boolean>(false);
   const [homeAds, setHomeAds] = useState<any[]>([]);
+
+  const [keyword, setKeyword] = useState('');
+
+  const [adExposedSet] = useState(() => new Set<string>());
 
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const contentRef = useRef<HTMLDivElement>(null);
@@ -194,6 +199,38 @@ const ToolsPage: React.FC = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (!homeAds || homeAds.length === 0) return;
+    if (typeof window === 'undefined') return;
+    if (!(window as any).IntersectionObserver) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          const el = e.target as HTMLElement;
+          const adId = el.getAttribute('data-ad-id');
+          const position = el.getAttribute('data-ad-position');
+          if (!adId) return;
+          const key = `${position || ''}:${adId}`;
+          if (adExposedSet.has(key)) return;
+          adExposedSet.add(key);
+          track('ad_view', {
+            adId: Number(adId),
+            position: position || 'home_top',
+          });
+        });
+      },
+      { threshold: 0.35 },
+    );
+
+    const nodes = Array.from(document.querySelectorAll('.ai-ads-section .ai-ad-item[data-ad-id]'));
+    nodes.forEach((n) => io.observe(n));
+    return () => {
+      io.disconnect();
+    };
+  }, [homeAds.length]);
+
   // 内容加载完成后：从分类页跳转则滚动到目标区块，否则滚动到顶部
   useEffect(() => {
     if (loading) return;
@@ -232,6 +269,23 @@ const ToolsPage: React.FC = () => {
   }, [categories]);
 
   const flatToolCount = flatTools.length;
+
+  const filteredTools = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    if (!kw) return [] as ToolItem[];
+    return flatTools.filter((t) => {
+      const name = (t.name || '').toLowerCase();
+      const desc = (t.description || '').toLowerCase();
+      const tags = (t.tags || []).map((x) => String(x).toLowerCase());
+      const cat = (t.categoryTitle || '').toLowerCase();
+      return (
+        name.includes(kw) ||
+        desc.includes(kw) ||
+        cat.includes(kw) ||
+        tags.some((tag) => tag.includes(kw))
+      );
+    });
+  }, [flatTools, keyword]);
 
   // 热门工具：优先按 tags 包含 hot/热门 过滤；若无则取前 16 个作为兜底
   const hotTools = useMemo(() => {
@@ -351,6 +405,63 @@ const ToolsPage: React.FC = () => {
     >
       <div ref={contentRef} className="ai-tools-page">
         <main className="ai-tools-content">
+          <div className="ai-tools-search-bar">
+            <Input.Search
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              allowClear
+              placeholder="搜索工具名称/简介/标签"
+              size="large"
+            />
+          </div>
+
+          {!loading && keyword.trim() ? (
+            <section className="ai-tools-section">
+              <div className="ai-tools-section-header ai-tools-section-header-circle">
+                <span className="ai-tools-section-header-left">
+                  <span className="ai-tools-section-header-dot" />
+                  <Title level={4} className="ai-tools-section-title">
+                    搜索结果
+                  </Title>
+                </span>
+                <Text type="secondary" className="ai-tools-section-count">
+                  {filteredTools.length} / {flatToolCount}
+                </Text>
+              </div>
+
+              {filteredTools.length === 0 ? (
+                <div className="ai-tools-empty">
+                  <Paragraph>没有找到匹配的工具。</Paragraph>
+                </div>
+              ) : (
+                <div className="ai-tools-grid">
+                  {filteredTools.map((tool) => (
+                    <div
+                      key={`search-${tool.id}`}
+                      className="ai-tools-card"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => history.push(`/tool/${tool.id}`)}
+                      onKeyDown={(e) => e.key === 'Enter' && history.push(`/tool/${tool.id}`)}
+                    >
+                      <div className="ai-tools-card-avatar">
+                        {tool.name?.[0]?.toUpperCase?.() || 'A'}
+                      </div>
+                      <div className="ai-tools-card-body">
+                        <div className="ai-tools-card-name" title={tool.name}>
+                          {tool.name}
+                        </div>
+                        <div className="ai-tools-card-desc" title={tool.description || ''}>
+                          {tool.description || '暂无简介'}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          ) : null}
+
           {!loading && homeAds.length > 0 && (
             <section className="ai-tools-section ai-ads-section">
               {homeAdsDisplayType === 'carousel' && homeAds.length > 1 ? (
@@ -362,9 +473,18 @@ const ToolsPage: React.FC = () => {
                       <a
                         key={ad.id}
                         className="ai-ad-item"
+                        data-ad-id={String(ad.id)}
+                        data-ad-position="home_top"
                         href={href || undefined}
                         target={href ? "_blank" : undefined}
                         rel={href ? "noreferrer" : undefined}
+                        onClick={() => {
+                          track('ad_click', {
+                            adId: ad.id,
+                            position: 'home_top',
+                            linkUrl: href,
+                          });
+                        }}
                       >
                         {img ? <img className="ai-ad-image" src={img} alt={String(ad.name || '')} /> : null}
                       </a>
@@ -372,7 +492,11 @@ const ToolsPage: React.FC = () => {
                   })}
                 </Carousel>
               ) : (
-                <div className="ai-ads-grid">
+                <div
+                  className={`ai-ads-grid ${
+                    homeAds.length === 1 ? 'ai-ads-grid-1' : homeAds.length === 2 ? 'ai-ads-grid-2' : ''
+                  }`}
+                >
                   {homeAds.map((ad: any) => {
                     const href = ad.linkUrl ? String(ad.linkUrl) : '';
                     const img = ad.imageUrl ? String(ad.imageUrl) : '';
@@ -380,9 +504,18 @@ const ToolsPage: React.FC = () => {
                       <a
                         key={ad.id}
                         className="ai-ad-item"
+                        data-ad-id={String(ad.id)}
+                        data-ad-position="home_top"
                         href={href || undefined}
                         target={href ? "_blank" : undefined}
                         rel={href ? "noreferrer" : undefined}
+                        onClick={() => {
+                          track('ad_click', {
+                            adId: ad.id,
+                            position: 'home_top',
+                            linkUrl: href,
+                          });
+                        }}
                       >
                         {img ? <img className="ai-ad-image" src={img} alt={String(ad.name || '')} /> : null}
                       </a>
@@ -405,7 +538,7 @@ const ToolsPage: React.FC = () => {
             )}
 
           {/* 顶部：热门工具 */}
-          {!loading && hotTools.length > 0 && (
+          {!loading && !keyword.trim() && hotTools.length > 0 && (
             <section
               id="section-hot"
               ref={(el) => {
@@ -446,7 +579,7 @@ const ToolsPage: React.FC = () => {
           )}
 
           {/* 顶部：最新收录 */}
-          {!loading && latestTools.length > 0 && (
+          {!loading && !keyword.trim() && latestTools.length > 0 && (
             <section
               id="section-latest"
               ref={(el) => {
@@ -487,7 +620,7 @@ const ToolsPage: React.FC = () => {
           )}
 
             {/* 按分类分组展示 */}
-            {!loading &&
+            {!loading && !keyword.trim() &&
               categories.map((c) => {
                 const displayTools = c.tools.slice(0, HOME_CATEGORY_LIMIT);
                 const hasMore = c.tools.length > HOME_CATEGORY_LIMIT;

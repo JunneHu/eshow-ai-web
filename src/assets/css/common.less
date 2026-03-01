@@ -12,6 +12,49 @@
   padding: 20px;
 }
 
+.ai-back-top {
+  position: fixed;
+  right: 22px;
+  bottom: 26px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(99, 102, 241, 0.9);
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 9999;
+  transition: transform 0.15s ease-out, background 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.ai-back-top:hover {
+  transform: translateY(-2px);
+  background: rgba(79, 70, 229, 0.95);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.22);
+}
+
+.ai-back-top:active {
+  transform: translateY(0);
+}
+
+.ai-back-top:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35), 0 16px 34px rgba(15, 23, 42, 0.22);
+}
+
+@media (max-width: 767px) {
+  .ai-back-top {
+    right: 14px;
+    bottom: 18px;
+    width: 42px;
+    height: 42px;
+  }
+}
+
 .ant-page-header {
   padding-bottom: 0;
 }

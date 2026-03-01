@@ -84,6 +84,7 @@ export function useToolNavItems() {
     const items: NavItem[] = [
       { key: 'hot', label: '热门工具', icon: React.createElement(FireOutlined) },
       { key: 'latest', label: '最新收录', icon: React.createElement(ClockCircleOutlined) },
+      { key: 'news', label: 'AI资讯', icon: React.createElement(ReadOutlined), path: '/news' },
     ];
     categories.forEach((c) => {
       items.push({

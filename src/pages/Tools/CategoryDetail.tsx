@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Typography, Spin } from 'antd';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Typography, Spin, Input } from 'antd';
 import { useParams, Link, useHistory } from 'react-router-dom';
 import BasicLayout from '@/layouts/BasicLayout';
 import { getCategoryDetail } from '@/api/tools';
@@ -23,6 +23,18 @@ const CategoryDetail: React.FC = () => {
   const [categoryKey, setCategoryKey] = useState<string>('');
   const [tools, setTools] = useState<ToolItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [keyword, setKeyword] = useState('');
+
+  const filteredTools = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    if (!kw) return tools;
+    return tools.filter((t) => {
+      const name = (t.name || '').toLowerCase();
+      const desc = (t.description || '').toLowerCase();
+      return name.includes(kw) || desc.includes(kw);
+    });
+  }, [keyword, tools]);
 
   useEffect(() => {
     if (!id) return;
@@ -69,12 +81,22 @@ const CategoryDetail: React.FC = () => {
       }
       headerRight={
         <Text type="secondary">
-          {title} · 共 {tools.length} 个工具
+          {title} · 共 {filteredTools.length} 个工具
         </Text>
       }
     >
       <div className="ai-tools-page">
         <main className="ai-tools-content">
+          <div className="ai-tools-search-bar">
+            <Input.Search
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              allowClear
+              placeholder="在当前分类内搜索"
+              size="large"
+            />
+          </div>
+
           {loading && (
             <div className="ai-tools-loading">
               <Spin size="large" />
@@ -88,17 +110,17 @@ const CategoryDetail: React.FC = () => {
                   {title}
                 </Title>
                 <Text type="secondary" className="ai-tools-section-count">
-                  共 {tools.length} 个工具
+                  共 {filteredTools.length} 个工具
                 </Text>
               </div>
 
-              {tools.length === 0 ? (
+              {filteredTools.length === 0 ? (
                 <div className="ai-tools-empty">
-                  <Paragraph>该分类下暂无工具。</Paragraph>
+                  <Paragraph>{keyword.trim() ? '没有找到匹配的工具。' : '该分类下暂无工具。'}</Paragraph>
                 </div>
               ) : (
                 <div className="ai-tools-grid">
-                  {tools.map((tool) => (
+                  {filteredTools.map((tool) => (
                     <div
                       key={tool.id}
                       className="ai-tools-card"

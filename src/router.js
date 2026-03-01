@@ -20,6 +20,8 @@ import Page404 from '@/components/error/Page404';
 import ToolsPage from '@/pages/Tools';
 import CategoryDetail from '@/pages/Tools/CategoryDetail';
 import ToolDetail from '@/pages/Tools/ToolDetail';
+import NewsListPage from '@/pages/News';
+import NewsDetailPage from '@/pages/News/Detail';
 
 moment.defineLocale('zh-cn', zhcn);
 moment.locale('zh-cn');
@@ -32,6 +34,10 @@ const RouterWrapper = ({ history }) => {
         <Switch>
           {/* 默认首页：AI 工具集 */}
           <Route exact path="/" component={ToolsPage} />
+
+          {/* AI 资讯 */}
+          <Route exact path="/news" component={NewsListPage} />
+          <Route exact path="/news/:id" component={NewsDetailPage} />
 
           {/* 分类详情：展示该分类下所有工具 */}
           <Route exact path="/category/:id" component={CategoryDetail} />

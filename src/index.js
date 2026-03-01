@@ -8,6 +8,7 @@ import './assets/css/antdCommon.less';
 import './assets/css/common.less';
 import './assets/css/color.css';
 import './assets/css/tailwindcss.css'
+import { initTrackingUnloadFlush } from './utils/tracking';
 
 const app = dva({
   history: createBrowserHistory(),
@@ -21,3 +22,5 @@ app.use(createLoading());
 app.router(Router);
 
 app.start('#app');
+
+initTrackingUnloadFlush();
